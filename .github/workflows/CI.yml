@@ -9,9 +9,18 @@ jobs:
   terraform:
     runs-on: ubuntu-latest
 
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
       - name: Azure Login
         uses: azure/login@v2
@@ -21,11 +30,23 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Terraform Format Check
+        run: terraform fmt -check
+        working-directory: .
+
       - name: Terraform Init
         run: terraform init
+        working-directory: .
 
       - name: Terraform Validate
         run: terraform validate
+        working-directory: .
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -var-file="terraform.tfvars"
+        working-directory: .
+
+      # Uncomment below if you also want auto-apply on push
+      # - name: Terraform Apply
+      #   run: terraform apply -auto-approve -var-file="terraform.tfvars"
+      #   working-directory: .
